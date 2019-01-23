@@ -1,0 +1,9 @@
+C:\Users\Fedor\Documents\Visual Studio 2017\Projects\acceleration_game\acceleration_game\bin\Debug\acceleration_game.exe.config
+C:\Users\Fedor\Documents\Visual Studio 2017\Projects\acceleration_game\acceleration_game\bin\Debug\acceleration_game.exe
+C:\Users\Fedor\Documents\Visual Studio 2017\Projects\acceleration_game\acceleration_game\bin\Debug\acceleration_game.pdb
+C:\Users\Fedor\Documents\Visual Studio 2017\Projects\acceleration_game\acceleration_game\obj\Debug\acceleration_game.FormGame.resources
+C:\Users\Fedor\Documents\Visual Studio 2017\Projects\acceleration_game\acceleration_game\obj\Debug\acceleration_game.Properties.Resources.resources
+C:\Users\Fedor\Documents\Visual Studio 2017\Projects\acceleration_game\acceleration_game\obj\Debug\acceleration_game.csproj.GenerateResource.cache
+C:\Users\Fedor\Documents\Visual Studio 2017\Projects\acceleration_game\acceleration_game\obj\Debug\acceleration_game.csproj.CoreCompileInputs.cache
+C:\Users\Fedor\Documents\Visual Studio 2017\Projects\acceleration_game\acceleration_game\obj\Debug\acceleration_game.exe
+C:\Users\Fedor\Documents\Visual Studio 2017\Projects\acceleration_game\acceleration_game\obj\Debug\acceleration_game.pdb
