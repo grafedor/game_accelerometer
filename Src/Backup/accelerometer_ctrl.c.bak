@@ -1,0 +1,110 @@
+/**
+  ******************************************************************************
+  * File Name          : accelerometer_ctrl.c
+  * Description        : Plik ten zawiera funkcje i zmienne potrzebne do obs³ugi
+  * 					 odczytu/zapsu danych z akcelerometrów i komputerea oraz
+  * 					 odpowiada za zarz¹dzanie przep³ywem danych w programie
+  * Created on		   : 15.10.2017
+  * Author			   : Gracjan Fedoryniec
+  ******************************************************************************
+  *
+  * COPYRIGHT(c) FEDOR
+  *
+  ******************************************************************************
+  */
+
+#include "accelerometer_ctrl.h"
+#include "i2c.h"
+#include "usart.h"
+#include "gpio.h"
+
+
+// zmienne globalne
+uint8_t RxFromTerminal = 1;						// bufor przechowuj¹cy dane odebrane z terminala
+uint8_t sprinf_buf[100]; 						// bufor przechowujacy wysylana wiadomosc do terminala
+uint16_t size = 0;								// zmienna zawieraj¹ca obliczon¹ przez funkcjê sprintf() dlugosc slowa
+
+
+
+/**
+* accelerometer_ctrl - jest to g³owna funkcja, która zarz¹dza przep³ywem wszystkim danych w programie
+* oraz umo¿liwia u¿ytkownikowi wybór akcelerometru z jakiego maj¹ zostac odczytane dane
+* i zmianê paramterów odczytywanych danych
+*/
+void accelerometer_ctrl(void){
+	// Ustawienie parametrów pomiarowych akcelerometrów
+
+	static uint8_t SetResolution = 0;		// SetResolution = 0 -> 16 bit without 8-LSB (small precision) or SetResolution = 1 -> 16bit high_percision
+
+
+	if(RxFromTerminal == 1)
+	{
+		// Wywo³anie funkcji realizuj¹cej odczyt danych z akcelerometrów + wys³anie do terminala
+		read_data_acc(SetResolution);
+	}
+	else{ // Komunikat o bledzie
+		// Wyslanie do terminala
+		size = sprintf((char*)sprinf_buf, "\r\n, %i, Error command. Range or command not exist!!!", RxFromTerminal);
+		HAL_UART_Transmit_IT(&huart2, sprinf_buf, size);
+	}
+
+}
+/**
+* read_data_acc - function read data from accelerometer and send data to the terminal on computer
+* inline - funkcja nie bedzie marnowa³a czasu na skok do wywo³ania funkcji(zostanie rozwiniêta jako makro)
+*/
+inline void read_data_acc(uint8_t SetResolution){
+	int16_t x = 0;				// zmienna przechowuj¹ca poprawnie przekonwertowan¹ dan¹ z akcelerometru z osi x - znak +/-
+	int16_t y = 0;				// zmienna przechowuj¹ca poprawnie przekonwertowan¹ dan¹ z akcelerometru z osi y - znak +/-
+	int16_t z = 0;				// zmienna przechowuj¹ca poprawnie przekonwertowan¹ dan¹ z akcelerometru z osi z - znak +/-
+
+
+	static uint8_t out_h = 0;	// zmienna przechowuj¹ca dane 8bit MSB z akcelerometru
+	static uint8_t out_l = 0;	// zmienna przechowuj¹ca dane 8bit LSB z akcelerometru
+
+	if(SetResolution == 0){
+		// Odczyt danych z akcelerometrów
+		HAL_I2C_Mem_Read(&hi2c1, LIS3DH_ADDRESS << 1, LIS3DH_OUT_X_H, 1, &out_h, 1, 100); //get value for x_axis
+		x |= out_h << 8; // przekszta³cenie 8 bitowej danej na 16 bitow¹ zgodnie z rozdzelczoœci¹ akcelerometru
+		HAL_I2C_Mem_Read(&hi2c1, LIS3DH_ADDRESS << 1, LIS3DH_OUT_Y_H, 1, &out_h, 1, 100); //get value for y_axis
+		y |= out_h << 8; // przekszta³cenie 8 bitowej danej na 16 bitow¹ zgodnie z rozdzelczoœci¹ akcelerometru
+		HAL_I2C_Mem_Read(&hi2c1, LIS3DH_ADDRESS << 1, LIS3DH_OUT_Z_H, 1, &out_h, 1, 100); //get value for z_axis
+		z |= out_h << 8; // przekszta³cenie 8 bitowej danej na 16 bitow¹ zgodnie z rozdzelczoœci¹ akcelerometru
+
+	}
+	else if(SetResolution == 1){
+		// Odczyt danych z akcelerometrów
+		HAL_I2C_Mem_Read(&hi2c1,LIS3DH_ADDRESS << 1, LIS3DH_OUT_X_H, 1, &out_h, 1, 100); //get value for x_axis
+		HAL_I2C_Mem_Read(&hi2c1,LIS3DH_ADDRESS << 1, LIS3DH_OUT_X_L, 1, &out_l, 1, 100); //get value for x_axis
+		x = out_h << 8; // shift 8 bit to the MSB in x [-][-][-][-][-][-][-][-] | [][][][][][][][]
+		x |= out_l; // write 8 bit to the LSB in x [][][][][][][][] | [-][-][-][-][-][-][-][-]
+
+		HAL_I2C_Mem_Read(&hi2c1,LIS3DH_ADDRESS << 1, LIS3DH_OUT_Y_H, 1, &out_h, 1, 100); //get value for y_axis
+		HAL_I2C_Mem_Read(&hi2c1,LIS3DH_ADDRESS << 1, LIS3DH_OUT_Y_L, 1, &out_l, 1, 100); //get value for y_axis
+		y = out_h << 8; // shift 8 bit to the MSB in x [-][-][-][-][-][-][-][-] | [][][][][][][][]
+		y |= out_l; // write 8 bit to the LSB in x [][][][][][][][] | [-][-][-][-][-][-][-][-]
+
+		HAL_I2C_Mem_Read(&hi2c1,LIS3DH_ADDRESS << 1, LIS3DH_OUT_Z_H, 1, &out_h, 1, 100); //get value for z_axis
+		HAL_I2C_Mem_Read(&hi2c1,LIS3DH_ADDRESS << 1, LIS3DH_OUT_Z_L, 1, &out_l, 1, 100); //get value for z_axis
+		z = out_h << 8; // shift 8 bit to the MSB in x [-][-][-][-][-][-][-][-] | [][][][][][][][]
+		z |= out_l; // write 8 bit to the LSB in x [][][][][][][][] | [-][-][-][-][-][-][-][-]
+
+
+	}
+	// Wyslanie do terminala
+	size = sprintf((char*)sprinf_buf, "\r\n %i, %i, %i,", x, y, z);
+	HAL_UART_Transmit_IT(&huart2, sprinf_buf, size);
+}
+
+
+/* Obs³uga przerwania - odbiór danych -------------------*/
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
+	// wykonane dopiero gdy bedzie przerwanie, gdy recive odbierze ca³y bajt
+
+	// UART2 - odbiór danych z TERMINAL
+	if(huart -> Instance == USART2)
+	{
+		HAL_UART_Receive_IT(&huart2, &RxFromTerminal, 1); // ponowne w³¹czenie przerwania na odbiór danych - nas³uchiwanie na odbiór danych z terminala
+	}
+
+}
